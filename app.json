@@ -1,0 +1,8 @@
+{
+  "name": "adsApp",
+  "displayName": "adsApp",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-4198631347355498~7841839105",
+    "ios_app_id": "ca-app-pub-4198631347355498~3606138672"
+  }
+}
