@@ -9,6 +9,8 @@
 import React, {useEffect} from 'react';
 import type {Node} from 'react';
 import {
+  Button,
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -25,48 +27,47 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-import {AppOpenAd, TestIds, AdEventType} from 'react-native-google-mobile-ads';
+import {
+  AppOpenAd,
+  TestIds,
+  AdEventType,
+  InterstitialAd,
+} from 'react-native-google-mobile-ads';
+import mobileAds from 'react-native-google-mobile-ads';
+import {NativeModules} from 'react-native';
+const {RNShare} = NativeModules;
 
-const adUnitId = !__DEV__
-  ? TestIds.APP_OPEN
-  : 'ca-app-pub-4198631347355498/4004883487';
+const appOpenAd = AppOpenAd.createForAdRequest(
+  'ca-app-pub-4198631347355498/4004883487',
+  {
+    requestNonPersonalizedAdsOnly: true,
+    keywords: ['fashion', 'clothing'],
+  },
+);
 
-const appOpenAd = AppOpenAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
-  keywords: ['fashion', 'clothing'],
-});
-
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
-
+const interstitial = InterstitialAd.createForAdRequest(
+  'ca-app-pub-4198631347355498/2717181530',
+  {
+    keywords: ['fashion', 'clothing'],
+  },
+);
 const App: () => Node = () => {
   const isDarkMode = useColorScheme() === 'dark';
   useEffect(() => {
-    appOpenAd.load();
+    (async () => {
+      await mobileAds().openAdInspector();
+    })();
+    if (Platform.OS === 'ios') {
+      interstitial.load();
+      interstitial.addAdEventsListener(ev => {
+        console.log(ev);
+      });
+    } else {
+      appOpenAd.load();
+      appOpenAd.addAdEventsListener(ev => {
+        console.log(ev);
+      });
+    }
   }, []);
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -75,35 +76,20 @@ const App: () => Node = () => {
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit{' '}
-            <Text
-              onPress={() => appOpenAd.loaded && appOpenAd.show()}
-              style={styles.highlight}>
-              App.js
-            </Text>{' '}
-            to change this screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <View style={{flex: 1, minHeight: '100%', backgroundColor: '#000'}}>
+        <Button
+          title="Show Interstitial"
+          onPress={() => {
+            interstitial.show();
+          }}
+        />
+        <Button
+          title="Share"
+          onPress={() =>
+            RNShare.open({message: 'Bridge with Swift Dev.to Tutorial'})
+          }
+        />
+      </View>
     </SafeAreaView>
   );
 };
